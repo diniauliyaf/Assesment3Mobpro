@@ -1,5 +1,6 @@
 package com.diniauliya0015.assesment3mobpro.network
 
+import android.media.Image
 import com.diniauliya0015.assesment3mobpro.model.Hewan
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -27,5 +28,8 @@ interface HewanApiService {
 object HewanApi{
     val service: HewanApiService by lazy {
         retrofit.create(HewanApiService::class.java)
+    }
+    fun getHewanUrl(imageId: String):String{
+        return "$BASE_URL$imageId.jpg"
     }
 }

@@ -67,12 +67,17 @@ fun ListItem(hewan: Hewan) {
     ){
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data(HewanApi.getHewanUrl(hewan.imageId))
+                .data(
+                    if (hewan.nama == "Ayam")
+                        HewanApi.getHewanUrl("not-found")
+                    else
+                        HewanApi.getHewanUrl(hewan.imageId))
                 .crossfade(true)
                 .build(),
             contentDescription = stringResource(R.string.gambar, hewan.nama),
             contentScale = ContentScale.Crop,
             placeholder = painterResource(id = R.drawable.loading_img),
+            error = painterResource(id = R.drawable.broken_image),
             modifier = Modifier.fillMaxWidth().padding(4.dp)
         )
         Column (

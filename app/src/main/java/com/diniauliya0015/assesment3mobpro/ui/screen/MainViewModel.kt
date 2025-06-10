@@ -18,7 +18,7 @@ class MainViewModel : ViewModel() {
     init {
         retrieveData()
     }
-    private fun retrieveData(){
+    fun retrieveData(){
         viewModelScope.launch(Dispatchers.IO){
             status.value = HewanApi.ApiStatus.LOADING
             try {
@@ -26,6 +26,7 @@ class MainViewModel : ViewModel() {
                 status.value = HewanApi.ApiStatus.SUCCES
             }catch (e: Exception) {
                 Log.d("MainViewModel", "Failure: ${e.message}")
+                status.value = HewanApi.ApiStatus.FAILED
             }
         }
     }

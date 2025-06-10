@@ -22,22 +22,19 @@ class MainViewModel : ViewModel() {
         private set
     var errorMessage = mutableStateOf<String?>(null)
         private set
-    init {
-        retrieveData()
-    }
-    fun retrieveData(){
+
+    fun retrieveData(userId: String){
         viewModelScope.launch(Dispatchers.IO){
             status.value = HewanApi.ApiStatus.LOADING
             try {
-                data.value = HewanApi.service.getHewan()
-                status.value = HewanApi.ApiStatus.SUCCES
+                data.value = HewanApi.service.getHewan(userId)
+                status.value = HewanApi.ApiStatus.SUCCESS
             }catch (e: Exception) {
                 Log.d("MainViewModel", "Failure: ${e.message}")
                 status.value = HewanApi.ApiStatus.FAILED
             }
         }
     }
-
     fun saveData(userId: String, nama:String, namaLatin: String, bitmap: Bitmap) {
         viewModelScope.launch (Dispatchers.IO){
             try {
@@ -48,11 +45,11 @@ class MainViewModel : ViewModel() {
                     bitmap.toMultipartBody()
                 )
                 if (result.status == "succes")
-                    retrieveData()
+                    retrieveData(userId)
                 else
                     throw Exception(result.message)
             }catch (e: Exception) {
-                Log.d("MainViewModel", "Failure: ${e.message}")
+                Log.d("MainViewModel", "Failuressss: ${e.message}")
                 errorMessage.value = "Error: ${e.message}"
             }
         }

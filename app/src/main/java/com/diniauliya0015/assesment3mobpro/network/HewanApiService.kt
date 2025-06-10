@@ -14,8 +14,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 
-private const val BASE_URL = "https://raw.githubusercontent.com/" +
-        "indraazimi/mobpro1-compose/static-api/"
+private const val BASE_URL = "https://gh.d3ifcool.org/"
 
 private val moshi = Moshi.Builder()
     .add(KotlinJsonAdapterFactory())
@@ -27,8 +26,10 @@ private val retrofit = Retrofit.Builder()
     .build()
 
 interface HewanApiService {
-    @GET("static-api.json")
-    suspend fun getHewan(): List<Hewan>
+    @GET("hewan.php")
+    suspend fun getHewan(
+        @Header("Authorization") userId: String
+    ): List<Hewan>
 
     @Multipart
     @POST("hewan.php")
@@ -45,7 +46,7 @@ object HewanApi{
         retrofit.create(HewanApiService::class.java)
     }
     fun getHewanUrl(imageId: String):String{
-        return "$BASE_URL$imageId.jpg"
+        return "${BASE_URL}image.php?id=$imageId"
     }
-    enum class ApiStatus { LOADING, SUCCES, FAILED }
+    enum class ApiStatus { LOADING, SUCCESS, FAILED }
 }

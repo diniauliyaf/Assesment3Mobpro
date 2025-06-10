@@ -72,11 +72,7 @@ fun ListItem(hewan: Hewan) {
     ){
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data(
-                    if (hewan.nama == "Ayam")
-                        HewanApi.getHewanUrl("not-found")
-                    else
-                        HewanApi.getHewanUrl(hewan.imageId))
+                .data(HewanApi.getHewanUrl(hewan.imageId))
                 .crossfade(true)
                 .build(),
             contentDescription = stringResource(R.string.gambar, hewan.nama),

@@ -1,6 +1,5 @@
 package com.diniauliya0015.assesment3mobpro.network
 
-import android.media.Image
 import com.diniauliya0015.assesment3mobpro.model.Hewan
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -32,4 +31,5 @@ object HewanApi{
     fun getHewanUrl(imageId: String):String{
         return "$BASE_URL$imageId.jpg"
     }
+    enum class ApiStatus { LOADING, SUCCES }
 }

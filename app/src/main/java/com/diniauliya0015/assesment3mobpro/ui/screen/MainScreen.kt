@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -81,6 +83,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingExcept
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.diniauliya0015.assesment3mobpro.network.ApiStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,29 +96,35 @@ fun MainScreen() {
     val errorMessage by viewModel.errorMessage
 
     var showDialog by remember { mutableStateOf(false) }
+
     var showHewanDialog by remember { mutableStateOf(false) }
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    var selectedHewan by remember { mutableStateOf<Hewan?>(null) }
 
     var bitmap: Bitmap? by remember { mutableStateOf(null) }
     val launcher = rememberLauncherForActivityResult(CropImageContract()) {
         bitmap = getCroppedImage(context.contentResolver, it)
         if (bitmap != null) showHewanDialog = true
     }
-    Scaffold(
+
+    Scaffold (
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text = stringResource(R.string.app_name))
+                    Text(text = stringResource(id = R.string.app_name))
                 },
                 colors = TopAppBarDefaults.mediumTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.primary
+                    titleContentColor = MaterialTheme.colorScheme.primary,
                 ),
                 actions = {
                     IconButton(onClick = {
-                        if (user.email.isEmpty()) {
+                        if (user.email.isEmpty()){
                             CoroutineScope(Dispatchers.IO).launch { signIn(context, dataStore) }
                         }
-                        else{
+                        else {
                             showDialog = true
                         }
                     }) {
@@ -129,14 +138,13 @@ fun MainScreen() {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                val options = CropImageContractOptions(
-                    null, CropImageOptions(
-                        imageSourceIncludeGallery = false,
-                        imageSourceIncludeCamera = true,
-                        fixAspectRatio = true
-                    )
+            FloatingActionButton(onClick = {val options = CropImageContractOptions(
+                null, CropImageOptions(
+                    imageSourceIncludeGallery = false,
+                    imageSourceIncludeCamera = true,
+                    fixAspectRatio = true
                 )
+            )
                 launcher.launch(options)
             }) {
                 Icon(
@@ -146,25 +154,37 @@ fun MainScreen() {
             }
         }
     ) { innerPadding ->
-        ScreenContent(viewModel, user.email, Modifier.padding(innerPadding))
+        ScreenContent(viewModel, user.email, Modifier.padding(innerPadding),
+            onDelete = { hewan -> selectedHewan = hewan
+                showDeleteDialog = true
+            })
 
-        if (showDialog) {
+        if(showDialog) {
             ProfilDialog(
                 user = user,
-                onDismissRequest = {showDialog = false}) {
+                onDismissRequest = { showDialog = false }) {
                 CoroutineScope(Dispatchers.IO).launch { signOut(context, dataStore) }
                 showDialog = false
             }
         }
+
         if (showHewanDialog) {
             HewanDialog(
                 bitmap = bitmap,
-                onDismissRequest = { showHewanDialog = false}) { nama, namaLatin ->
+                onDismissRequest = { showHewanDialog = false }) { nama, namaLatin ->
                 viewModel.saveData(user.email, nama, namaLatin, bitmap!!)
                 showHewanDialog = false
             }
         }
-        if (errorMessage != null){
+
+        if (showDeleteDialog) {
+            DeleteDialog(onDismissRequest = { showDeleteDialog = false},
+                onConfirm = {selectedHewan?.let { viewModel.deleteData(user.email, it.id) }
+                    showDeleteDialog = false
+                })
+        }
+
+        if(errorMessage !=null){
             Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
             viewModel.clearMessage()
         }
@@ -172,71 +192,42 @@ fun MainScreen() {
 }
 
 @Composable
-fun ListItem(hewan: Hewan) {
-    Box(
-        modifier = Modifier.padding(4.dp).border(1.dp, Color.Gray),
-        contentAlignment = Alignment.BottomCenter
-    ){
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(HewanApi.getHewanUrl(hewan.imageId))
-                .crossfade(true)
-                .build(),
-            contentDescription = stringResource(R.string.gambar, hewan.nama),
-            contentScale = ContentScale.Crop,
-            placeholder = painterResource(id = R.drawable.loading_img),
-            error = painterResource(id = R.drawable.broken_image),
-            modifier = Modifier.fillMaxWidth().padding(4.dp)
-        )
-        Column (
-            modifier = Modifier.fillMaxWidth().padding(4.dp)
-                .background(Color(red = 0f, green = 0f, blue = 0f, alpha = 0.5f))
-                .padding(4.dp)
-        ){
-            Text (
-                text = hewan.nama,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Text(
-                text = hewan.namaLatin,
-                fontStyle = FontStyle.Italic,
-                fontSize = 14.sp,
-                color = Color.White
-            )
-        }
-
-    }
-}
-
-@Composable
-fun ScreenContent(viewModel: MainViewModel, userId: String,modifier: Modifier = Modifier) {
+fun ScreenContent(viewModel: MainViewModel, userId: String, modifier: Modifier = Modifier, onDelete: (Hewan) -> Unit) {
     val data by viewModel.data
     val status by viewModel.status.collectAsState()
+
     LaunchedEffect(userId) {
         viewModel.retrieveData(userId)
     }
-
-    when (status) {
-        HewanApi.ApiStatus.LOADING -> {
-            Box(
+    when(status) {
+        ApiStatus.LOADING -> {
+            Box (
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ){
                 CircularProgressIndicator()
             }
         }
-        HewanApi.ApiStatus.SUCCESS -> {
+
+        ApiStatus.SUCCESS -> {
             LazyVerticalGrid(
-                modifier = modifier.fillMaxWidth().padding(4.dp),
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(4.dp),
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(bottom = 80.dp)
-            ){
-                items(data) { ListItem(hewan = it)}
+            ) {
+                items(data) { hewan ->
+                    ListItem(hewan = hewan) {
+                        onDelete(hewan)
+                    }
+                }
             }
         }
-        HewanApi.ApiStatus.FAILED -> {
-            Column(
+
+
+        ApiStatus.FAILED -> {
+            Column (
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -247,13 +238,72 @@ fun ScreenContent(viewModel: MainViewModel, userId: String,modifier: Modifier = 
                     modifier = Modifier.padding(top = 16.dp),
                     contentPadding = PaddingValues(horizontal = 32.dp, vertical = 16.dp)
                 ) {
-                    Text(text = stringResource(id = R.string.try_again))
+                    Text(text = stringResource(id =R.string.try_again))
                 }
             }
         }
     }
 }
 
+@Composable
+fun ListItem(hewan: Hewan, onDelete: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .padding(4.dp)
+            .border(1.dp, Color.Gray),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(HewanApi.getHewanUrl(hewan.imageId))
+                .crossfade(true)
+                .build(),
+            contentDescription = stringResource(R.string.gambar, hewan.nama),
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(id = R.drawable.loading_img),
+            error = painterResource(id = R.drawable.broken_image),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
+                .background(Color(red = 0f, green = 0f, blue = 0f, alpha = 0.5f))
+                .padding(4.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = hewan.nama,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = hewan.namaLatin,
+                        fontStyle = FontStyle.Italic,
+                        fontSize = 14.sp,
+                        color = Color.White
+                    )
+                }
+                if (hewan.mine == "1") {
+                    IconButton(onClick = { onDelete() }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = stringResource(R.string.hapus),
+                            tint = Color.White
+                        )
+                    }
+                }
+            }
+
+        }
+    }
+}
 
 private suspend fun signIn(context: Context, dataStore: UserDataStore) {
     val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
@@ -273,10 +323,7 @@ private suspend fun signIn(context: Context, dataStore: UserDataStore) {
     }
 }
 
-private suspend fun handleSignIn(
-    result: GetCredentialResponse,
-    dataStore: UserDataStore
-) {
+private suspend fun handleSignIn(result: GetCredentialResponse, dataStore: UserDataStore) {
     val credential = result.credential
     if (credential is CustomCredential &&
         credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
@@ -294,6 +341,7 @@ private suspend fun handleSignIn(
         Log.e("SIGN-IN", "Error: unrecognized custom credential type.")
     }
 }
+
 private suspend fun signOut(context: Context, dataStore: UserDataStore) {
     try {
         val credentialManager = CredentialManager.create(context)
@@ -301,7 +349,7 @@ private suspend fun signOut(context: Context, dataStore: UserDataStore) {
             ClearCredentialStateRequest()
         )
         dataStore.saveData(User())
-    }catch (e: ClearCredentialException) {
+    } catch (e: ClearCredentialException) {
         Log.e("SIGN-IN", "Error: ${e.errorMessage}")
     }
 }
@@ -314,10 +362,12 @@ private fun getCroppedImage(
         Log.e("IMAGE", "Error: ${result.error}")
         return null
     }
+
     val uri = result.uriContent ?: return null
+
     return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
         MediaStore.Images.Media.getBitmap(resolver, uri)
-    }else {
+    } else {
         val source = ImageDecoder.createSource(resolver, uri)
         ImageDecoder.decodeBitmap(source)
     }

@@ -13,25 +13,26 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import com.diniauliya0015.assesment3mobpro.network.ApiStatus
 import java.io.ByteArrayOutputStream
 
 class MainViewModel : ViewModel() {
     var data = mutableStateOf(emptyList<Hewan>())
         private set
-    var status = MutableStateFlow(HewanApi.ApiStatus.LOADING)
+    var status = MutableStateFlow(ApiStatus.LOADING)
         private set
     var errorMessage = mutableStateOf<String?>(null)
         private set
 
     fun retrieveData(userId: String){
         viewModelScope.launch(Dispatchers.IO){
-            status.value = HewanApi.ApiStatus.LOADING
+            status.value = ApiStatus.LOADING
             try {
                 data.value = HewanApi.service.getHewan(userId)
-                status.value = HewanApi.ApiStatus.SUCCESS
+                status.value = ApiStatus.SUCCESS
             }catch (e: Exception) {
                 Log.d("MainViewModel", "Failure: ${e.message}")
-                status.value = HewanApi.ApiStatus.FAILED
+                status.value = ApiStatus.FAILED
             }
         }
     }
@@ -44,16 +45,33 @@ class MainViewModel : ViewModel() {
                     namaLatin.toRequestBody("text/plan".toMediaTypeOrNull()),
                     bitmap.toMultipartBody()
                 )
-                if (result.status == "succes")
+                if (result.status == "success")
                     retrieveData(userId)
                 else
                     throw Exception(result.message)
             }catch (e: Exception) {
-                Log.d("MainViewModel", "Failuressss: ${e.message}")
+                Log.d("MainViewModel", "Failure: ${e.message}")
                 errorMessage.value = "Error: ${e.message}"
             }
         }
     }
+
+    fun deleteData(userId: String, id: String ) {
+        viewModelScope.launch (Dispatchers.IO){
+            try {
+                val result = HewanApi.service.deleteHewan(
+                    userId, id)
+                if (result.status == "success")
+                    retrieveData(userId)
+                else
+                    throw Exception(result.message)
+            }catch (e: Exception) {
+                Log.d("MainViewModel", "Failure: ${e.message}")
+                errorMessage.value = "Error: ${e.message}"
+            }
+        }
+    }
+
     private fun Bitmap.toMultipartBody(): MultipartBody.Part {
         val stream = ByteArrayOutputStream()
         compress(Bitmap.CompressFormat.JPEG, 80, stream)

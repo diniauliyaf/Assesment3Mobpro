@@ -11,4 +11,6 @@
     <string name="nama_latin">Nama Latin</string>
     <string name="batal">Batal</string>
     <string name="simpan">Simpan</string>
+    <string name="pesan_hapus">Pesan Hapus</string>
+    <string name="hapus">Hapus</string>
 </resources>

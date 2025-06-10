@@ -57,7 +57,7 @@ fun ProfilDialog(
                     contentScale = ContentScale.Crop,
                     placeholder = painterResource(id = R.drawable.loading_img),
                     error = painterResource(id = R.drawable.broken_image),
-                    modifier = Modifier.size(100.dp)
+                    modifier = Modifier.size(100.dp).clip(CircleShape)
                 )
                 Text(
                     text = user.name,

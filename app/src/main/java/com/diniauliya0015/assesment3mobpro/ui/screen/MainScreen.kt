@@ -27,7 +27,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -199,6 +198,13 @@ fun ScreenContent(viewModel: MainViewModel, userId: String, modifier: Modifier =
     val data by viewModel.data
     val status by viewModel.status.collectAsState()
 
+    var showDetailDialog by remember { mutableStateOf(false) }
+    var selectedReceipt by remember { mutableStateOf<Resep?>(null) }
+
+    if (showDetailDialog && selectedReceipt != null) {
+        DetailDialog(resep = selectedReceipt!!, onDismiss = { showDetailDialog = false })
+    }
+
     LaunchedEffect(userId) {
         viewModel.retrieveData(userId)
     }
@@ -221,14 +227,14 @@ fun ScreenContent(viewModel: MainViewModel, userId: String, modifier: Modifier =
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 items(data) { resep ->
-                    ListItem(resep = resep) {
-                        onDelete(resep)
-                    }
+                    ListItem(
+                        resep = resep,
+                        onDelete = { onDelete(resep) },
+                        onDetailClick = { selectedReceipt = it; showDetailDialog = true },
+                    )
                 }
             }
         }
-
-
         ApiStatus.FAILED -> {
             Column (
                 modifier = Modifier.fillMaxSize(),
@@ -249,11 +255,12 @@ fun ScreenContent(viewModel: MainViewModel, userId: String, modifier: Modifier =
 }
 
 @Composable
-fun ListItem(resep: Resep, onDelete: () -> Unit) {
+fun ListItem(resep: Resep, onDelete: () -> Unit, onDetailClick: (Resep) -> Unit) {
     Box(
         modifier = Modifier
             .padding(4.dp)
-            .border(1.dp, Color.Gray),
+            .border(1.dp, Color.Gray)
+            .clickable { onDetailClick(resep) },
         contentAlignment = Alignment.BottomCenter
     ) {
         AsyncImage(

@@ -57,6 +57,39 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    fun updateData(userId: String, id: String, judul: String, deskripsi: String, langkah: String, bitmap: Bitmap?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val result = if (bitmap != null) {
+                    ResepApi.service.updateReceiptWithImage(
+                        userId,
+                        id.toRequestBody("text/plain".toMediaTypeOrNull()),
+                        judul.toRequestBody("text/plain".toMediaTypeOrNull()),
+                        deskripsi.toRequestBody("text/plain".toMediaTypeOrNull()),
+                        langkah.toRequestBody("text/plain".toMediaTypeOrNull()),
+                        bitmap.toMultipartBody()
+                    )
+                } else {
+                    ResepApi.service.updateReceipt(
+                        userId,
+                        id.toRequestBody("text/plain".toMediaTypeOrNull()),
+                        judul.toRequestBody("text/plain".toMediaTypeOrNull()),
+                        deskripsi.toRequestBody("text/plain".toMediaTypeOrNull()),
+                        langkah.toRequestBody("text/plain".toMediaTypeOrNull())
+                    )
+                }
+
+                if (result.status == "success") {
+                    retrieveData(userId)
+                } else {
+                    throw Exception(result.message)
+                }
+            } catch (e: Exception) {
+                errorMessage.value = "Error saat update: ${e.message}"
+            }
+        }
+    }
+
     fun deleteData(userId: String, id: String ) {
         viewModelScope.launch (Dispatchers.IO){
             try {

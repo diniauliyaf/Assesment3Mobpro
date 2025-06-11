@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -200,9 +201,50 @@ fun ScreenContent(viewModel: MainViewModel, userId: String, modifier: Modifier =
 
     var showDetailDialog by remember { mutableStateOf(false) }
     var selectedReceipt by remember { mutableStateOf<Resep?>(null) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editedBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     if (showDetailDialog && selectedReceipt != null) {
         DetailDialog(resep = selectedReceipt!!, onDismiss = { showDetailDialog = false })
+    }
+
+    val context = LocalContext.current
+    val editLauncher = rememberLauncherForActivityResult(CropImageContract()) {
+        editedBitmap = getCroppedImage(context.contentResolver, it)
+    }
+
+    if (showEditDialog && selectedReceipt != null) {
+        EditReceiptDialog(
+            resep = selectedReceipt!!,
+            bitmap = editedBitmap,
+            onDismissRequest = {
+                showEditDialog = false
+                editedBitmap = null
+            },
+            onUpdate = { judul, deskripsi, langkah, bitmap ->
+                viewModel.updateData(
+                    userId,
+                    selectedReceipt!!.id,
+                    judul,
+                    deskripsi,
+                    langkah,
+                    bitmap
+                )
+                showEditDialog = false
+                editedBitmap = null
+            },
+            onChangeImageClick = {
+                val options = CropImageContractOptions(
+                    null,
+                    CropImageOptions(
+                        imageSourceIncludeGallery = false,
+                        imageSourceIncludeCamera = true,
+                        fixAspectRatio = true
+                    )
+                )
+                editLauncher.launch(options)
+            }
+        )
     }
 
     LaunchedEffect(userId) {
@@ -242,6 +284,7 @@ fun ScreenContent(viewModel: MainViewModel, userId: String, modifier: Modifier =
                             resep = resep,
                             onDelete = { onDelete(resep) },
                             onDetailClick = { selectedReceipt = it; showDetailDialog = true },
+                            onEditClick = { selectedReceipt = it; showEditDialog = true },
                         )
                     }
                 }
@@ -267,7 +310,7 @@ fun ScreenContent(viewModel: MainViewModel, userId: String, modifier: Modifier =
 }
 
 @Composable
-fun ListItem(resep: Resep, onDelete: () -> Unit, onDetailClick: (Resep) -> Unit) {
+fun ListItem(resep: Resep, onDelete: () -> Unit, onDetailClick: (Resep) -> Unit, onEditClick: (Resep) -> Unit) {
     Box(
         modifier = Modifier
             .padding(4.dp)
@@ -317,6 +360,13 @@ fun ListItem(resep: Resep, onDelete: () -> Unit, onDetailClick: (Resep) -> Unit)
                     )
                 }
                 if (resep.mine == "1") {
+                    IconButton(onClick = { onEditClick(resep) }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.edit),
+                            tint = Color.White
+                        )
+                    }
                     IconButton(
                         onClick = { onDelete() },
                         modifier = Modifier.align(Alignment.CenterVertically)

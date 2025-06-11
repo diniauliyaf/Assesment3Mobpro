@@ -43,6 +43,27 @@ interface ResepApiService {
         @Part image: MultipartBody.Part
     ): OpStatus
 
+    @Multipart
+    @POST("food_recipe.php")
+    suspend fun updateReceipt(
+        @Header("Authorization") userId: String,
+        @Part("id") id: RequestBody,
+        @Part("judul") judul: RequestBody,
+        @Part("deskripsi") deskripsi: RequestBody,
+        @Part("langkah") langkah: RequestBody
+    ): OpStatus
+
+    @Multipart
+    @POST("food_recipe.php")
+    suspend fun updateReceiptWithImage(
+        @Header("Authorization") userId: String,
+        @Part("id") id: RequestBody,
+        @Part("judul") judul: RequestBody,
+        @Part("deskripsi") deskripsi: RequestBody,
+        @Part("langkah") langkah: RequestBody,
+        @Part image: MultipartBody.Part
+    ): OpStatus
+
     @DELETE("food_recipe.php")
     suspend fun deleteResep(
         @Header("Authorization") userId: String,

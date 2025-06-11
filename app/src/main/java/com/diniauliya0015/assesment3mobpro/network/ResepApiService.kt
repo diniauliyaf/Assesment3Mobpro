@@ -1,6 +1,6 @@
 package com.diniauliya0015.assesment3mobpro.network
 
-import com.diniauliya0015.assesment3mobpro.model.Hewan
+import com.diniauliya0015.assesment3mobpro.model.Resep
 import com.diniauliya0015.assesment3mobpro.model.OpStatus
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -16,7 +16,7 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Query
 
-private const val BASE_URL = "https://gh.d3ifcool.org/"
+private const val BASE_URL = "https://store.sthresearch.site/"
 
 private val moshi = Moshi.Builder()
     .add(KotlinJsonAdapterFactory())
@@ -27,33 +27,34 @@ private val retrofit = Retrofit.Builder()
     .baseUrl(BASE_URL)
     .build()
 
-interface HewanApiService {
-    @GET("hewan.php")
-    suspend fun getHewan(
+interface ResepApiService {
+    @GET("food_recipe.php")
+    suspend fun getResep(
         @Header("Authorization") userId: String
-    ): List<Hewan>
+    ): List<Resep>
 
     @Multipart
-    @POST("hewan.php")
-    suspend fun postHewan(
+    @POST("food_recipe.php")
+    suspend fun postResep(
         @Header("Authorization") userId: String,
-        @Part("nama") nama: RequestBody,
-        @Part("namaLatin") namaLatin: RequestBody,
+        @Part("judul") judul: RequestBody,
+        @Part("deskripsi") deskripsi: RequestBody,
+        @Part("langkah") langkah: RequestBody,
         @Part image: MultipartBody.Part
     ): OpStatus
 
-    @DELETE("hewan.php")
-    suspend fun deleteHewan(
+    @DELETE("food_recipe.php")
+    suspend fun deleteResep(
         @Header("Authorization") userId: String,
         @Query("id") id: String
     ): OpStatus
 }
 
-object HewanApi{
-    val service: HewanApiService by lazy {
-        retrofit.create(HewanApiService::class.java)
+object ResepApi{
+    val service: ResepApiService by lazy {
+        retrofit.create(ResepApiService::class.java)
     }
-    fun getHewanUrl(imageId: String):String{
+    fun getResepUrl(imageId: String):String{
         return "${BASE_URL}image.php?id=$imageId"
     }
 }

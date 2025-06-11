@@ -9,10 +9,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -27,20 +29,24 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.diniauliya0015.assesment3mobpro.R
 import com.diniauliya0015.assesment3mobpro.ui.theme.Assesment3MobproTheme
 
 @Composable
-fun HewanDialog(
+fun ResepDialog(
     bitmap: Bitmap?,
     onDismissRequest: () -> Unit,
-    onConfirmation: (String, String) -> Unit
+    onConfirmation: (String, String, String) -> Unit
 ){
-    var  nama by remember { mutableStateOf("") }
-    var namaLatin by remember { mutableStateOf("") }
+    var judul by remember { mutableStateOf("") }
+    var deskripsi by remember { mutableStateOf("") }
+    var langkah by remember { mutableStateOf("") }
+
 
     Dialog (onDismissRequest = { onDismissRequest()}) {
         Card (
@@ -57,9 +63,9 @@ fun HewanDialog(
                     modifier = Modifier.fillMaxWidth().aspectRatio(1f)
                 )
                 OutlinedTextField(
-                    value = nama,
-                    onValueChange = { nama = it},
-                    label = { Text(text = stringResource(id = R.string.nama)) },
+                    value = judul,
+                    onValueChange = { judul = it},
+                    label = { Text(text = stringResource(id = R.string.judul)) },
                     maxLines = 1,
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Words,
@@ -68,15 +74,37 @@ fun HewanDialog(
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 OutlinedTextField(
-                    value = namaLatin,
-                    onValueChange = { namaLatin = it},
-                    label = { Text(text = stringResource(id = R.string.nama_latin)) },
+                    value = deskripsi,
+                    onValueChange = { deskripsi = it},
+                    label = { Text(text = stringResource(id = R.string.deskripsi)) },
                     maxLines = 1,
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
-                        imeAction = ImeAction.Done
+                        imeAction = ImeAction.Next
                     ),
                     modifier = Modifier.padding(top = 8.dp)
+                )
+                OutlinedTextField(
+                    value = langkah,
+                    onValueChange = { langkah = it },
+                    label = { Text(text = stringResource(id = R.string.langkah)) },
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth()
+                        .heightIn(min = 100.dp),
+
+                    textStyle = LocalTextStyle.current.copy(
+                        lineHeight = 20.sp
+                    ),
+
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        imeAction = ImeAction.Default,
+                        keyboardType = KeyboardType.Text
+                    ),
+
+                    singleLine = false,
+                    maxLines = Int.MAX_VALUE
                 )
                 Row (
                     modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
@@ -89,8 +117,8 @@ fun HewanDialog(
                         Text(text = stringResource(R.string.batal))
                     }
                     OutlinedButton(
-                        onClick = { onConfirmation(nama, namaLatin)},
-                        enabled = nama.isNotEmpty() && namaLatin.isNotEmpty(),
+                        onClick = { onConfirmation(judul, deskripsi, langkah)},
+                        enabled = judul.isNotEmpty() && deskripsi.isNotEmpty() && langkah.isNotEmpty(),
                         modifier = Modifier.padding(8.dp)
                     ) {
                         Text(text = stringResource(R.string.simpan))
@@ -106,10 +134,10 @@ fun HewanDialog(
 @Composable
 fun AddDialogPreview() {
     Assesment3MobproTheme {
-        HewanDialog(
+        ResepDialog(
             bitmap = null,
             onDismissRequest = {},
-            onConfirmation = { _, _ ->}
+            onConfirmation = { _, _, _ ->}
         )
     }
 }

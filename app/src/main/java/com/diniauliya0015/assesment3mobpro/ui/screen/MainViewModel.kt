@@ -5,8 +5,8 @@ import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.diniauliya0015.assesment3mobpro.model.Hewan
-import com.diniauliya0015.assesment3mobpro.network.HewanApi
+import com.diniauliya0015.assesment3mobpro.model.Resep
+import com.diniauliya0015.assesment3mobpro.network.ResepApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -17,7 +17,7 @@ import com.diniauliya0015.assesment3mobpro.network.ApiStatus
 import java.io.ByteArrayOutputStream
 
 class MainViewModel : ViewModel() {
-    var data = mutableStateOf(emptyList<Hewan>())
+    var data = mutableStateOf(emptyList<Resep>())
         private set
     var status = MutableStateFlow(ApiStatus.LOADING)
         private set
@@ -28,7 +28,7 @@ class MainViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO){
             status.value = ApiStatus.LOADING
             try {
-                data.value = HewanApi.service.getHewan(userId)
+                data.value = ResepApi.service.getResep(userId)
                 status.value = ApiStatus.SUCCESS
             }catch (e: Exception) {
                 Log.d("MainViewModel", "Failure: ${e.message}")
@@ -36,13 +36,14 @@ class MainViewModel : ViewModel() {
             }
         }
     }
-    fun saveData(userId: String, nama:String, namaLatin: String, bitmap: Bitmap) {
+    fun saveData(userId: String, judul:String, deskripsi: String, langkah : String, bitmap: Bitmap) {
         viewModelScope.launch (Dispatchers.IO){
             try {
-                val result = HewanApi.service.postHewan(
+                val result = ResepApi.service.postResep(
                     userId,
-                    nama.toRequestBody("text/plan".toMediaTypeOrNull()),
-                    namaLatin.toRequestBody("text/plan".toMediaTypeOrNull()),
+                    judul.toRequestBody("text/plan".toMediaTypeOrNull()),
+                    deskripsi.toRequestBody("text/plan".toMediaTypeOrNull()),
+                    langkah.toRequestBody("text/plan".toMediaTypeOrNull()),
                     bitmap.toMultipartBody()
                 )
                 if (result.status == "success")
@@ -59,7 +60,7 @@ class MainViewModel : ViewModel() {
     fun deleteData(userId: String, id: String ) {
         viewModelScope.launch (Dispatchers.IO){
             try {
-                val result = HewanApi.service.deleteHewan(
+                val result = ResepApi.service.deleteResep(
                     userId, id)
                 if (result.status == "success")
                     retrieveData(userId)

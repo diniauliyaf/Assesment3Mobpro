@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,6 +55,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -72,9 +75,9 @@ import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
 import com.diniauliya0015.assesment3mobpro.BuildConfig
 import com.diniauliya0015.assesment3mobpro.R
-import com.diniauliya0015.assesment3mobpro.model.Hewan
+import com.diniauliya0015.assesment3mobpro.model.Resep
 import com.diniauliya0015.assesment3mobpro.model.User
-import com.diniauliya0015.assesment3mobpro.network.HewanApi
+import com.diniauliya0015.assesment3mobpro.network.ResepApi
 import com.diniauliya0015.assesment3mobpro.network.UserDataStore
 import com.diniauliya0015.assesment3mobpro.ui.theme.Assesment3MobproTheme
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -97,16 +100,16 @@ fun MainScreen() {
 
     var showDialog by remember { mutableStateOf(false) }
 
-    var showHewanDialog by remember { mutableStateOf(false) }
+    var showResepDialog by remember { mutableStateOf(false) }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    var selectedHewan by remember { mutableStateOf<Hewan?>(null) }
+    var selectedResep by remember { mutableStateOf<Resep?>(null) }
 
     var bitmap: Bitmap? by remember { mutableStateOf(null) }
     val launcher = rememberLauncherForActivityResult(CropImageContract()) {
         bitmap = getCroppedImage(context.contentResolver, it)
-        if (bitmap != null) showHewanDialog = true
+        if (bitmap != null) showResepDialog = true
     }
 
     Scaffold (
@@ -149,13 +152,13 @@ fun MainScreen() {
             }) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(id = R.string.tambah_hewan)
+                    contentDescription = stringResource(id = R.string.tambah_resep)
                 )
             }
         }
     ) { innerPadding ->
         ScreenContent(viewModel, user.email, Modifier.padding(innerPadding),
-            onDelete = { hewan -> selectedHewan = hewan
+            onDelete = { resep -> selectedResep = resep
                 showDeleteDialog = true
             })
 
@@ -168,18 +171,18 @@ fun MainScreen() {
             }
         }
 
-        if (showHewanDialog) {
-            HewanDialog(
+        if (showResepDialog) {
+            ResepDialog(
                 bitmap = bitmap,
-                onDismissRequest = { showHewanDialog = false }) { nama, namaLatin ->
-                viewModel.saveData(user.email, nama, namaLatin, bitmap!!)
-                showHewanDialog = false
+                onDismissRequest = { showResepDialog = false }) { judul, deskripsi, langkah ->
+                viewModel.saveData(user.email, judul, deskripsi, langkah, bitmap!!)
+                showResepDialog = false
             }
         }
 
         if (showDeleteDialog) {
             DeleteDialog(onDismissRequest = { showDeleteDialog = false},
-                onConfirm = {selectedHewan?.let { viewModel.deleteData(user.email, it.id) }
+                onConfirm = {selectedResep?.let { viewModel.deleteData(user.email, it.id) }
                     showDeleteDialog = false
                 })
         }
@@ -192,7 +195,7 @@ fun MainScreen() {
 }
 
 @Composable
-fun ScreenContent(viewModel: MainViewModel, userId: String, modifier: Modifier = Modifier, onDelete: (Hewan) -> Unit) {
+fun ScreenContent(viewModel: MainViewModel, userId: String, modifier: Modifier = Modifier, onDelete: (Resep) -> Unit) {
     val data by viewModel.data
     val status by viewModel.status.collectAsState()
 
@@ -217,9 +220,9 @@ fun ScreenContent(viewModel: MainViewModel, userId: String, modifier: Modifier =
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
-                items(data) { hewan ->
-                    ListItem(hewan = hewan) {
-                        onDelete(hewan)
+                items(data) { resep ->
+                    ListItem(resep = resep) {
+                        onDelete(resep)
                     }
                 }
             }
@@ -246,7 +249,7 @@ fun ScreenContent(viewModel: MainViewModel, userId: String, modifier: Modifier =
 }
 
 @Composable
-fun ListItem(hewan: Hewan, onDelete: () -> Unit) {
+fun ListItem(resep: Resep, onDelete: () -> Unit) {
     Box(
         modifier = Modifier
             .padding(4.dp)
@@ -255,10 +258,10 @@ fun ListItem(hewan: Hewan, onDelete: () -> Unit) {
     ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data(HewanApi.getHewanUrl(hewan.imageId))
+                .data(ResepApi.getResepUrl(resep.imageId))
                 .crossfade(true)
                 .build(),
-            contentDescription = stringResource(R.string.gambar, hewan.nama),
+            contentDescription = stringResource(R.string.gambar, resep.judul),
             contentScale = ContentScale.Crop,
             placeholder = painterResource(id = R.drawable.loading_img),
             error = painterResource(id = R.drawable.broken_image),
@@ -269,29 +272,36 @@ fun ListItem(hewan: Hewan, onDelete: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(4.dp)
-                .background(Color(red = 0f, green = 0f, blue = 0f, alpha = 0.5f))
-                .padding(4.dp)
+                .background(Color(0f, 0f, 0f, 0.5f))
+                .padding(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
-                        text = hewan.nama,
+                        text = resep.judul,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
                     Text(
-                        text = hewan.namaLatin,
+                        text = resep.deskripsi,
                         fontStyle = FontStyle.Italic,
                         fontSize = 14.sp,
-                        color = Color.White
+                        color = Color.White,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
-                if (hewan.mine == "1") {
-                    IconButton(onClick = { onDelete() }) {
+                if (resep.mine == "1") {
+                    IconButton(
+                        onClick = { onDelete() },
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = stringResource(R.string.hapus),
@@ -300,7 +310,6 @@ fun ListItem(hewan: Hewan, onDelete: () -> Unit) {
                     }
                 }
             }
-
         }
     }
 }

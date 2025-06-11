@@ -219,19 +219,31 @@ fun ScreenContent(viewModel: MainViewModel, userId: String, modifier: Modifier =
         }
 
         ApiStatus.SUCCESS -> {
-            LazyVerticalGrid(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(4.dp),
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(bottom = 80.dp)
-            ) {
-                items(data) { resep ->
-                    ListItem(
-                        resep = resep,
-                        onDelete = { onDelete(resep) },
-                        onDetailClick = { selectedReceipt = it; showDetailDialog = true },
+            if (data.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.tidak_ada_data),
+                        style = MaterialTheme.typography.bodyLarge
                     )
+                }
+            } else {
+                LazyVerticalGrid(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(4.dp),
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(bottom = 80.dp)
+                ) {
+                    items(data) { resep ->
+                        ListItem(
+                            resep = resep,
+                            onDelete = { onDelete(resep) },
+                            onDetailClick = { selectedReceipt = it; showDetailDialog = true },
+                        )
+                    }
                 }
             }
         }

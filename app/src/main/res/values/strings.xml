@@ -13,5 +13,6 @@
     <string name="batal">Batal</string>
     <string name="simpan">Simpan</string>
     <string name="pesan_hapus">Apakah kamu yakin ingin menghapus Resep Makanan ini ?</string>
+    <string name="tidak_ada_data">Data Resep Makanan Tidak Ditemukan</string>
     <string name="hapus">Hapus</string>
 </resources>
